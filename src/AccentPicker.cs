@@ -105,7 +105,7 @@ namespace CodexUsageTaskbar
             AccessibleRole = AccessibleRole.PushButton;
             Size = new Size(40, 38);
             Margin = new Padding(2, 2, 5, 2);
-            Cursor = Cursors.Hand;
+            Cursor = Native.SystemHand();
             FlatStyle = FlatStyle.Flat;
             FlatAppearance.BorderSize = 0;
             BackColor = palette.Card;

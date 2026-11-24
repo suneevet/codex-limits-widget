@@ -240,7 +240,7 @@ namespace CodexUsageTaskbar
         static void StyleButton(Button button,Color background,Color foreground,Color border)
         {
             button.FlatStyle=FlatStyle.Flat;button.FlatAppearance.BorderColor=border;button.FlatAppearance.BorderSize=1;
-            button.BackColor=background;button.ForeColor=foreground;button.UseVisualStyleBackColor=false;button.Cursor=Cursors.Hand;
+            button.BackColor=background;button.ForeColor=foreground;button.UseVisualStyleBackColor=false;button.Cursor=Native.SystemHand();
             button.FlatAppearance.MouseOverBackColor = Color.FromArgb(
                 (background.R*9 + foreground.R)/10, (background.G*9 + foreground.G)/10, (background.B*9 + foreground.B)/10);
         }

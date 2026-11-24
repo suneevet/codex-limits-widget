@@ -124,7 +124,7 @@ namespace CodexUsageTaskbar
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
-            Cursor=!historyPage&&history!=null&&ForecastBounds(data,status,loading,stale,demo,scale).Contains(e.Location)?Cursors.Hand:Cursors.Default;
+            Cursor=!historyPage&&history!=null&&ForecastBounds(data,status,loading,stale,demo,scale).Contains(e.Location)?Native.SystemHand():Cursors.Default;
         }
         public static Rectangle ForecastBounds(UsageSnapshot snapshot,string message,bool isLoading,bool isStale,bool isDemo,float dpiScale)
         {

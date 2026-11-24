@@ -31,6 +31,7 @@ namespace CodexUsageTaskbar
                 File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "layout-result.json"), new JavaScriptSerializer().Serialize(new {
                     taskbarFound = bar != IntPtr.Zero, taskbarVisible = Native.IsWindowVisible(bar), taskbar = barRect.Rectangle,
                     cardFound = card != IntPtr.Zero, cardVisible = Native.IsWindowVisible(card), card = cardRect.Rectangle,
+                    cardDpi = Native.WindowDpi(card), cardPerMonitorV2 = Native.IsPerMonitorAwareV2(card),
                     notification = notificationRect.Rectangle, dpiScale = Native.Dpi(bar), fullscreen = Native.IsFullscreen(card, bar)
                 }));
                 return 0;

@@ -8,6 +8,7 @@ namespace CodexUsageTaskbar
 {
     public sealed class Settings
     {
+        public long? DisplayId { get; set; }
         public int HorizontalOffset { get; set; }
         public bool AboveTaskbar { get; set; }
         public bool DarkTheme { get; set; }
@@ -90,11 +91,12 @@ namespace CodexUsageTaskbar
         {
             get { using (var key = Registry.CurrentUser.OpenSubKey(RunKey)) return key != null && key.GetValue(RunName) != null; }
         }
-        public static void SetStartup(bool enabled)
+        public static void SetStartup(bool enabled) { SetStartup(enabled, Application.ExecutablePath); }
+        public static void SetStartup(bool enabled, string executable)
         {
             using (var key = Registry.CurrentUser.CreateSubKey(RunKey))
             {
-                if (enabled) key.SetValue(RunName, "\"" + Application.ExecutablePath + "\"");
+                if (enabled) key.SetValue(RunName, "\"" + executable + "\"");
                 else key.DeleteValue(RunName, false);
             }
         }

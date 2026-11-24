@@ -77,7 +77,7 @@ namespace CodexUsageTaskbar
             Native.SetWindowPos(window, Topmost, 0, 0, 0, 0, NoActivate | NoSize | NoMove);
         }
 
-        internal bool ShouldHide(string[] excluded)
+        internal bool ShouldHide(string[] excluded, uint ownerProcess = 0)
         {
             int state;
             const int notPresent = 1, direct3DFullscreen = 3;
@@ -86,7 +86,7 @@ namespace CodexUsageTaskbar
             IntPtr foreground = Native.GetForegroundWindow();
             uint pid;
             GetWindowThreadProcessId(foreground, out pid);
-            if (pid == GetCurrentProcessId()) return lastSuppressed;
+            if (pid == (ownerProcess == 0 ? GetCurrentProcessId() : ownerProcess)) return lastSuppressed;
             if (pid == 0) return false;
 
             var className = new StringBuilder(128);

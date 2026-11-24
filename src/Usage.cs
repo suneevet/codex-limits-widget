@@ -123,6 +123,7 @@ namespace CodexUsageTaskbar
         bool disposed;
         public string Stage { get; private set; }
         public string ExecutablePath { get; private set; }
+        public bool? ChatGptLoginRequired { get; private set; }
         public static string FindCodex()
         {
             string custom = Environment.GetEnvironmentVariable("CODEX_USAGE_CLI");
@@ -131,7 +132,18 @@ namespace CodexUsageTaskbar
             {
                 try { string path = Path.Combine(entry.Trim('"'), "codex.exe"); if (File.Exists(path)) return path; } catch (ArgumentException) { }
             }
-            string bin = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OpenAI", "Codex", "bin");
+            string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            foreach (string candidate in new[] {
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "codex", "bin", "codex.exe"),
+                Path.Combine(local, "Programs", "Codex Limits Widget", "resources", "codex", "bin", "codex.exe"),
+                Path.Combine(local, "Programs", "OpenAI", "Codex", "bin", "codex.exe"),
+                Path.Combine(profile, ".codex", "bin", "codex.exe"),
+                Path.Combine(local, "Microsoft", "WinGet", "Links", "codex.exe")
+            }) {
+                if (File.Exists(candidate)) return candidate;
+            }
+            string bin = Path.Combine(local, "OpenAI", "Codex", "bin");
             if (Directory.Exists(bin))
             {
                 var paths = Directory.GetFiles(bin, "codex.exe", SearchOption.AllDirectories);
@@ -141,7 +153,9 @@ namespace CodexUsageTaskbar
         }
         public async Task<UsageSnapshot> FetchAsync()
         {
-            Stage="start";ExecutablePath=FindCodex();
+            Stage="start";
+            ChatGptLoginRequired = null;
+            ExecutablePath=FindCodex();
             var start = new ProcessStartInfo(ExecutablePath, "app-server --listen stdio://") {
                 UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true,
                 RedirectStandardOutput = true, RedirectStandardError = true,
@@ -164,14 +178,25 @@ namespace CodexUsageTaskbar
                     try
                     {
                         await Send(current, new { id = 1, method = "initialize", @params = new { clientInfo = new {
-                            name = "gpt_usage_widget", title = "GPT Usage Widget", version = "1.0.5" } } },timeout.Token).ConfigureAwait(false);
+                            name = "gpt_usage_widget", title = "Codex Limits Widget", version = "2.0.1" } } },timeout.Token).ConfigureAwait(false);
                         stage = "initialize/read";Stage=stage;
                         await Receive(current, 1,timeout.Token).ConfigureAwait(false);
                         stage = "initialized/send";Stage=stage;
                         await Send(current, new { method = "initialized", @params = new { } },timeout.Token).ConfigureAwait(false);
-                        await Send(current, new { id = 2, method = "account/rateLimits/read", @params = new { } },timeout.Token).ConfigureAwait(false);
+                        stage = "account/read";Stage=stage;
+                        await Send(current, new { id = 2, method = "account/read", @params = new { refreshToken = false } }, timeout.Token).ConfigureAwait(false);
+                        string accountJson = await Receive(current, 2, timeout.Token).ConfigureAwait(false);
+                        var envelope = UsageParser.Object(new JavaScriptSerializer().DeserializeObject(accountJson));
+                        var accountResult = UsageParser.Object(UsageParser.Get(envelope, "result"));
+                        if (accountResult == null || !accountResult.ContainsKey("account"))
+                            throw new InvalidDataException("Codex CLI returned an invalid account response.");
+                        var account = UsageParser.Object(UsageParser.Get(accountResult, "account"));
+                        ChatGptLoginRequired = !string.Equals(UsageParser.Get(account, "type") as string, "chatgpt", StringComparison.Ordinal);
+                        if (ChatGptLoginRequired == true)
+                            throw new InvalidDataException("Sign in to Codex with ChatGPT.");
+                        await Send(current, new { id = 3, method = "account/rateLimits/read", @params = new { } },timeout.Token).ConfigureAwait(false);
                         stage = "rateLimits/read";Stage=stage;
-                        string result = await Receive(current, 2,timeout.Token).ConfigureAwait(false);
+                        string result = await Receive(current, 3,timeout.Token).ConfigureAwait(false);
                         stage = "rateLimits/parse";Stage=stage;
                         return UsageParser.Parse(result);
                     }

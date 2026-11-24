@@ -22,7 +22,7 @@ namespace CodexUsageTaskbar
             canvas=new HistoryCanvas(history,snapshot,settings,scale);
             scroll=new Panel {Dock=DockStyle.Fill,AutoScroll=true,BackColor=palette.Background};scroll.Controls.Add(canvas);Controls.Add(scroll);
             var toolbar=new FlowLayoutPanel {Dock=DockStyle.Bottom,Height=(int)(44*scale),WrapContents=false,FlowDirection=FlowDirection.RightToLeft,Padding=new Padding(0,(int)(6*scale),(int)(12*scale),0),BackColor=palette.Background};
-            var back=new Button {Text=Ui.Text("‹ 뒤로"),Width=(int)(80*scale),Height=(int)(30*scale),FlatStyle=FlatStyle.Flat,BackColor=palette.Card,ForeColor=Widget.Accent,Cursor=Cursors.Hand};
+            var back=new Button {Text=Ui.Text("‹ 뒤로"),Width=(int)(80*scale),Height=(int)(30*scale),FlatStyle=FlatStyle.Flat,BackColor=palette.Card,ForeColor=Widget.Accent,Cursor=Native.SystemHand()};
             back.FlatAppearance.BorderColor=palette.Border;
             back.Click+=delegate {if(BackRequested!=null)BackRequested();};toolbar.Controls.Add(back);
             periods=new UpwardComboBox {DropDownStyle=ComboBoxStyle.DropDownList,Width=(int)(130*scale),FlatStyle=FlatStyle.Flat,BackColor=palette.Card,ForeColor=palette.Ink};

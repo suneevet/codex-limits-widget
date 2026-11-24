@@ -46,7 +46,7 @@ namespace CodexUsageTaskbar
             {
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                g.TextRenderingHint = TextRenderingHint.AntiAlias;
                 g.ScaleTransform(scale, scale);
                 var body = new RectangleF(Padding, Padding, size.Width - 2 * Padding, size.Height - 2 * Padding);
                 float amount = Smooth(progress);
@@ -68,6 +68,8 @@ namespace CodexUsageTaskbar
                             using (var glass = Graphics.FromImage(surface))
                             {
                                 glass.SmoothingMode = SmoothingMode.AntiAlias;
+                                glass.PixelOffsetMode = PixelOffsetMode.Half;
+                                glass.InterpolationMode = InterpolationMode.HighQualityBilinear;
                                 glass.ScaleTransform(scale * 2, scale * 2);
                                 DrawSurface(glass, shape, body, radius, theme, rim, translucentGlass,
                                     lightPosition, environment, scale * 2);
@@ -104,7 +106,7 @@ namespace CodexUsageTaskbar
                     if (compactAlpha > 0)
                     {
                         Label(g, CompactQuota(data == null ? null : data.FiveHour, now), body.X + 78, labelY,
-                            ClosedWidth - 90, 22, 11, Fade(stale ? muted : ink, compactAlpha), true, true, shadow: clearGlass);
+                            ClosedWidth - 84, 22, 11, Fade(stale ? muted : ink, compactAlpha), true, true, shadow: clearGlass);
                     }
 
                     float reveal = Smooth(Math.Max(0, (progress - .37f) / .63f));
@@ -214,7 +216,7 @@ namespace CodexUsageTaskbar
         static void Label(Graphics g, string text, float x, float y, float width, float height, float size, Color color,
             bool bold, bool right = false, bool shadow = false)
         {
-            using (var font = new Font("Segoe UI", size, bold ? FontStyle.Bold : FontStyle.Regular, GraphicsUnit.Pixel))
+            using (var font = new Font("Calibri", size, bold ? FontStyle.Bold : FontStyle.Regular, GraphicsUnit.Pixel))
             using (var brush = new SolidBrush(color))
             using (var format = new StringFormat { Alignment = right ? StringAlignment.Far : StringAlignment.Near,
                 LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap, Trimming = StringTrimming.EllipsisCharacter })

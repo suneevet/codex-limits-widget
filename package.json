@@ -1,0 +1,48 @@
+{
+  "name": "codex-limits-widget",
+  "productName": "Codex Limits Widget",
+  "version": "2.0.1",
+  "description": "Виджет лимитов Codex для Windows",
+  "author": "Codex Limits Widget contributors",
+  "license": "MIT",
+  "private": true,
+  "main": "electron/main.cjs",
+  "scripts": {
+    "bridge": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./electron/build-bridge.ps1",
+    "start": "npm run bridge && electron .",
+    "test": "npm run bridge && node --test electron/tests/*.test.cjs",
+    "dist": "npm run bridge && node ./node_modules/electron/install.js && electron-builder --win portable --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.4.1",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "com.codexlimits.widget",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/*.cjs",
+      "electron/ui/**/*",
+      "assets/app.ico",
+      "assets/app-512.png",
+      "LICENSE"
+    ],
+    "extraResources": [
+      {
+        "from": "bin/CodexLimitsBridge.exe",
+        "to": "CodexLimitsBridge.exe"
+      }
+    ],
+    "win": {
+      "icon": "assets/app.ico",
+      "executableName": "CodexLimitsWidget",
+      "signExecutable": false
+    },
+    "portable": {
+      "artifactName": "CodexLimitsWidget.exe"
+    },
+    "electronDist": "node_modules/electron/dist"
+  }
+}

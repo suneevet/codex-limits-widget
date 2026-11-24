@@ -1,27 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.IO;
-using System.Reflection;
-using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
 namespace CodexUsageTaskbar
 {
-    public static class Ui
+    public static partial class Ui
     {
-        public static bool English
-        {
-            get {
-#if ENGLISH
-                return true;
-#else
-                return false;
-#endif
-            }
-        }
-        static readonly Dictionary<string, string> translations = Load();
         public static string TitleFontFamily { get { return English ? "Segoe UI" : "Malgun Gothic"; } }
         public static int MeasureTitle(int size)
         {
@@ -79,19 +64,6 @@ namespace CodexUsageTaskbar
                     new Rectangle(0, 0, bitmap.Width, bitmap.Height), GraphicsUnit.Pixel);
                 graphics.Restore(saved);
             }
-        }
-        static Dictionary<string, string> Load()
-        {
-            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("translations.en.json"))
-            using (var reader = new StreamReader(stream))
-                return new JavaScriptSerializer().Deserialize<Dictionary<string, string>>(reader.ReadToEnd());
-        }
-        public static string Text(string korean)
-        {
-            if (!English) return korean;
-            string english;
-            if (!translations.TryGetValue(korean, out english)) throw new InvalidOperationException("Missing English translation: " + korean);
-            return english;
         }
     }
 }

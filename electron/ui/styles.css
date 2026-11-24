@@ -1,0 +1,225 @@
+:root {
+  font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+  color-scheme: dark;
+  --bg: #101319;
+  --surface: #191e28;
+  --raised: #222937;
+  --ink: #f3f5fa;
+  --muted: #a2adbf;
+  --line: #343d4e;
+  --accent: #a8c0ff;
+  --track: #373f4e;
+  --danger: #ffb4ad;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f3f5fa;
+  --surface: #fff;
+  --raised: #edf1f8;
+  --ink: #172333;
+  --muted: #536279;
+  --line: #d5dce9;
+  --accent: #365ab6;
+  --track: #e0e6f2;
+  --danger: #a02424;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; color: var(--ink); background: var(--bg); }
+button, input, select { font: inherit; }
+button, select, input:not([type="checkbox"]) {
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--raised);
+  color: var(--ink);
+}
+button { cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: .58; cursor: default; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; }
+h1, h2, p { margin: 0; }
+h1 { font-size: 26px; font-weight: 650; letter-spacing: -.035em; }
+h2 { font-size: 16px; font-weight: 650; }
+p { margin-block: 10px; }
+body:not(.island-view) main { padding: 22px clamp(16px, 5vw, 36px) 12px; }
+.page-header, .form-footer, .quota-line {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.page-header { margin-bottom: 12px; }
+.muted, small, .forecast { color: var(--muted); }
+.card, fieldset {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 14px 16px;
+  min-width: 0;
+}
+.notice { color: var(--muted); border-left: 2px solid var(--accent); padding-left: 10px; }
+.details-grid { display: grid; gap: 10px; }
+.quota { display: grid; gap: 5px; }
+.quota-line strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+.meter { display: block; height: var(--bar-thickness, 5px); border-radius: 999px; background: var(--track); overflow: hidden; }
+.meter > span { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width 180ms ease; }
+.forecast { margin-top: 6px; font-size: 13px; line-height: 1.5; }
+.forecast p { margin: 3px 0; }
+.range { white-space: nowrap; font-size: 13px; }
+.history-card { margin-bottom: 12px; }
+canvas { display: block; width: 100%; height: 155px; margin-top: 8px; }
+.primary { background: var(--accent); color: var(--bg); font-weight: 650; }
+
+.island-view { background: transparent; overflow: hidden; user-select: none; }
+.island {
+  --pill-bg: #171b23;
+  --pill-ink: #f4f6fc;
+  --pill-muted: #a6b1c5;
+  --pill-line: #3b4353;
+  --pill-track: #373f4e;
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  transform: translateX(-50%);
+  width: 288px;
+  height: 34px;
+  border-radius: 17px;
+  overflow: hidden;
+  color: var(--pill-ink);
+  border: 1px solid var(--pill-line);
+  background: var(--pill-bg);
+  transition: width 270ms cubic-bezier(.2,.8,.2,1), height 270ms cubic-bezier(.2,.8,.2,1), border-radius 270ms ease;
+}
+.island[data-theme="light"] {
+  --pill-bg: #fbfcff;
+  --pill-ink: #15243b;
+  --pill-muted: #4c5c73;
+  --pill-line: #bcc8de;
+  --pill-track: #e0e6f2;
+}
+.island[data-theme="glass"] {
+  --pill-bg: #202733;
+  --pill-line: transparent;
+  --pill-track: rgba(216, 230, 255, .24);
+  --glass-tint: rgba(24, 30, 42, .84);
+  --glass-falloff: rgba(12, 16, 25, .38);
+  --glass-rim-top: rgba(239, 247, 255, .86);
+  --glass-rim-side: rgba(228, 240, 255, .13);
+  --glass-rim-bottom: rgba(236, 246, 255, .55);
+  --glass-glint: rgba(244, 250, 255, .21);
+}
+.island.bright-glass[data-theme="glass"] {
+  --pill-bg: #edf2fb;
+  --pill-ink: #101b2b;
+  --pill-muted: #34425a;
+  --pill-track: rgba(37, 56, 85, .22);
+  --glass-ink-accent: color-mix(in srgb, var(--accent), #132343 68%);
+  --glass-tint: rgba(231, 239, 251, .89);
+  --glass-falloff: rgba(139, 155, 184, .23);
+  --glass-glint: rgba(255, 255, 255, .43);
+}
+.glass-surface, .glass-rim { display: none; }
+.island[data-theme="glass"] { background: var(--glass-tint); border: 0; }
+.island[data-theme="glass"] .glass-surface,
+.island[data-theme="glass"].sampled-glass .glass-rim {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.glass-surface {
+  background: radial-gradient(ellipse at 23% -55%, var(--glass-glint), transparent 68%),
+    linear-gradient(155deg, transparent 36%, var(--glass-falloff));
+  box-shadow: inset 0 1px 5px var(--glass-glint);
+}
+.glass-surface::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  content: '';
+  padding: 1px;
+  background: linear-gradient(142deg, var(--glass-rim-top), var(--glass-rim-side) 36% 62%, var(--glass-rim-bottom));
+  mask: linear-gradient(white 0 0) content-box, linear-gradient(white 0 0);
+  mask-composite: exclude;
+}
+.sampled-glass .glass-rim { opacity: .66; }
+.island[data-theme="glass"].preview-refraction { --glass-tint: rgba(24, 30, 42, .78); background: transparent; }
+.preview-refraction .glass-surface {
+  background: linear-gradient(var(--glass-tint), var(--glass-tint)),
+    radial-gradient(ellipse at 23% -55%, var(--glass-glint), transparent 68%);
+  backdrop-filter: blur(.8px);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .island[data-theme="glass"]:not(.sampled-glass) { background: var(--pill-bg); }
+}
+.island.expanded { width: 352px; height: 152px; border-radius: 26px; }
+.island-action {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  position: relative;
+  background: transparent;
+  color: inherit;
+  border: 0;
+  border-radius: inherit;
+  padding: 0;
+}
+.island-action:focus-visible { outline-offset: -3px; }
+.island-action:active { opacity: .78; }
+.island-top {
+  position: absolute;
+  inset: 0 11px auto;
+  height: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.expanded .island-top { inset-inline: 15px; height: 36px; }
+.logo { width: 8px; height: 8px; border-radius: 50%; background: var(--signal-color, var(--glass-ink-accent, var(--accent))); flex: 0 0 auto; }
+.island {
+  --signal-yellow: #f7c948;
+  --signal-red: #ff6374;
+}
+.island[data-theme="light"], .island.bright-glass {
+  --signal-yellow: #a56b00;
+  --signal-red: #c5263d;
+}
+.island[data-signal="low"] { --signal-color: var(--signal-yellow); }
+.island[data-signal="critical"], .island[data-signal="empty"] { --signal-color: var(--signal-red); }
+.island[data-signal="empty"] .logo { animation: quota-pulse 2.35s ease-in-out infinite; }
+@keyframes quota-pulse { 50% { opacity: .48; } }
+.compact, .island-title { font-size: 12px; font-weight: 650; flex: 1; text-align: center; }
+.compact { overflow: hidden; text-overflow: ellipsis; }
+.island-title, .expanded .compact { display: none; }
+.expanded .island-title { display: inline; }
+.refresh-symbol { font-size: 16px; color: var(--pill-muted); }
+.island.busy .refresh-symbol { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.island-body { position: absolute; inset: 39px 15px auto; min-width: 315px; opacity: 0; transition: opacity 100ms ease; display: grid; gap: 8px; }
+.expanded .island-body { opacity: 1; transition-delay: 105ms; }
+.island .quota { font-size: 13px; gap: 3px; }
+.island .quota small { color: var(--pill-muted); line-height: 15px; }
+.island .meter { background: var(--pill-track); }
+.island.bright-glass .quota-line strong { color: var(--glass-ink-accent, var(--accent)); }
+.island.stale .meter > span { opacity: .55; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
+}
+.reduce-glass .island[data-theme="glass"],
+.island.reduce-glass[data-theme="glass"] { background: var(--pill-bg); color: var(--pill-ink); }
+.reduce-glass .glass-surface, .reduce-glass .glass-rim { display: none !important; }
+@media (prefers-reduced-transparency: reduce) {
+  .island[data-theme="glass"] { background: var(--pill-bg); }
+  .glass-surface, .glass-rim { display: none !important; }
+}
+@media (forced-colors: active) {
+  .island[data-theme] { background: Canvas; color: CanvasText; border-color: CanvasText; }
+  .glass-surface, .glass-rim { display: none !important; }
+  .meter > span { forced-color-adjust: none; background: Highlight; }
+  .logo { forced-color-adjust: none; background: var(--signal-color, Highlight); }
+}

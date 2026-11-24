@@ -20,18 +20,62 @@ namespace CodexUsageTaskbar
         [DllImport("user32.dll")] internal static extern IntPtr GetForegroundWindow();
         [StructLayout(LayoutKind.Sequential)] internal struct ComboBoxInfo {public int Size;public Rect Item,Button;public uint State;public IntPtr Combo,Edit,List;}
         [DllImport("user32.dll")] internal static extern bool GetComboBoxInfo(IntPtr combo,ref ComboBoxInfo info);
-        [DllImport("user32.dll")] internal static extern uint GetDpiForWindow(IntPtr window);
-        [DllImport("user32.dll")] internal static extern bool SetProcessDpiAwarenessContext(IntPtr context);
-        [DllImport("user32.dll")] internal static extern bool SetProcessDPIAware();
+        [DllImport("user32.dll")] static extern uint GetDpiForWindow(IntPtr window);
+        [DllImport("user32.dll")] static extern IntPtr GetWindowDpiAwarenessContext(IntPtr window);
+        [DllImport("user32.dll")] static extern bool AreDpiAwarenessContextsEqual(IntPtr first, IntPtr second);
+        [DllImport("user32.dll", SetLastError = true)] static extern bool SetProcessDpiAwarenessContext(IntPtr context);
+        [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
+        [DllImport("user32.dll", ExactSpelling = true)] static extern IntPtr LoadCursorW(IntPtr instance, IntPtr name);
+
+        const int IdcHand = 32649;
+        const int ErrorAccessDenied = 5;
+        static readonly IntPtr PerMonitorAwareV2 = new IntPtr(-4);
+        static Cursor systemHand;
+
+        internal static Cursor SystemHand()
+        {
+            IntPtr handle = LoadCursorW(IntPtr.Zero, new IntPtr(IdcHand));
+            if (handle == IntPtr.Zero) return Cursors.Hand;
+            if (systemHand == null || systemHand.Handle != handle) systemHand = new Cursor(handle);
+            return systemHand;
+        }
+
         public static void EnableDpi()
         {
-            try { SetProcessDpiAwarenessContext(new IntPtr(-4)); } catch (EntryPointNotFoundException) { SetProcessDPIAware(); }
+            try
+            {
+                // Windows can already have applied the manifest before Main runs.
+                if (SetProcessDpiAwarenessContext(PerMonitorAwareV2) || Marshal.GetLastWin32Error() == ErrorAccessDenied)
+                    return;
+            }
+            catch (EntryPointNotFoundException) { }
+            SetProcessDPIAware();
+        }
+
+        internal static uint? WindowDpi(IntPtr window)
+        {
+            try
+            {
+                uint dpi = GetDpiForWindow(window);
+                return dpi == 0 ? (uint?)null : dpi;
+            }
+            catch (EntryPointNotFoundException) { return null; }
+        }
+
+        internal static bool? IsPerMonitorAwareV2(IntPtr window)
+        {
+            try
+            {
+                IntPtr context = GetWindowDpiAwarenessContext(window);
+                return context == IntPtr.Zero ? (bool?)null : AreDpiAwarenessContextsEqual(context, PerMonitorAwareV2);
+            }
+            catch (EntryPointNotFoundException) { return null; }
         }
         public static float Dpi(IntPtr window)
         {
-            try { uint dpi = GetDpiForWindow(window); return dpi == 0 ? 1 : dpi / 96f; } catch (EntryPointNotFoundException) { return 1; }
+            return (WindowDpi(window) ?? 96) / 96f;
         }
-        public static Rectangle GetPlacement(Rectangle bar, Rectangle notification, float scale, int offset, bool above, int logicalWidth = Widget.LogicalWidth)
+        public static Rectangle GetPlacement(Rectangle bar, Rectangle notification, float scale, int offset, bool above, int logicalWidth = 388)
         {
             int width = (int)Math.Round(logicalWidth * scale);
             int height = (int)Math.Round(40 * scale);

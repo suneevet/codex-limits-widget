@@ -1,0 +1,189 @@
+/* Hallmark · built: project · genre: modern-minimal · shape: app screen · redesign: full · theme: Codex Limits */
+/* Critique · dense forms now use aligned rows beneath three tabs and a separate live capsule preview. */
+:root {
+  --settings-font: "Segoe UI Variable", "Segoe UI", sans-serif;
+  --settings-head: #171b23;
+  --settings-control: #1d2430;
+  --settings-outline: #65748d;
+  --settings-scroll: #59677d;
+  --settings-hover: #283244;
+  --settings-selected: #2b3a54;
+  --settings-selected-ink: #e0eaff;
+  --settings-disabled: #96a2b8;
+  --settings-invalid: #ffaba7;
+  --settings-inactive-fill: #171c25;
+  --stage-base: #293347;
+  --stage-stripe: #68788e;
+  --stage-rail: #85b1a6;
+  --stage-grid: #a6b7cb28;
+  --stage-caption: #ecf2fc;
+  --stage-caption-fill: #202938;
+}
+:root[data-theme="light"] {
+  --settings-head: #fcfdff;
+  --settings-control: #f7f9fc;
+  --settings-outline: #75839a;
+  --settings-scroll: #8a97ad;
+  --settings-hover: #e8eef7;
+  --settings-selected: #dce8fc;
+  --settings-selected-ink: #244585;
+  --settings-disabled: #5b6980;
+  --settings-invalid: #a02424;
+  --settings-inactive-fill: #edf0f5;
+}
+
+html:has(.settings-view), .settings-view { overflow-x: clip; }
+.settings-view {
+  font-family: var(--settings-font);
+  font-size: 15px;
+  line-height: 1.4;
+  height: 100dvh;
+}
+body.settings-view main {
+  min-width: 0;
+  width: 100%;
+  max-width: 780px;
+  height: 100%;
+  margin-inline: auto;
+  padding: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.settings-header {
+  padding: 20px clamp(16px, 5vw, 32px) 0;
+  background: var(--settings-head);
+  border-bottom: 1px solid var(--line);
+}
+.settings-header h1 {
+  font-size: 30px;
+  line-height: 1.15;
+  letter-spacing: -.03em;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+.settings-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 16px; padding-bottom: 8px; }
+.settings-tabs [role="tab"] {
+  min-height: 36px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
+  border-radius: 7px;
+}
+.settings-tabs [role="tab"]:hover { background: var(--settings-hover); color: var(--ink); border-color: transparent; }
+.settings-tabs [aria-selected="true"], .settings-tabs [aria-selected="true"]:hover {
+  background: var(--settings-selected);
+  color: var(--settings-selected-ink);
+}
+#preferences { min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+.settings-sections {
+  overflow-y: auto;
+  overflow-x: clip;
+  padding: 20px clamp(16px, 5vw, 32px) 24px;
+  scroll-padding-block: 15px;
+  scrollbar-color: var(--settings-scroll) var(--bg);
+  scrollbar-width: thin;
+}
+.settings-sections:focus-visible { outline-offset: -3px; }
+.settings-view fieldset {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  margin: 0 0 24px;
+}
+.settings-view legend { margin: 0 0 8px; padding: 0; color: var(--ink); font-size: 18px; font-weight: 650; }
+.settings-view .field {
+  min-height: 48px;
+  display: grid;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.settings-view .field:has(:disabled) { color: var(--settings-disabled); }
+.settings-view button:not(.swatch, .primary, [role="tab"]),
+.settings-view input:not([type="checkbox"]),
+.settings-view select { background: var(--settings-control); border-color: var(--settings-outline); }
+.settings-view .field input:not([type="checkbox"]), .settings-view .field select { min-height: 34px; min-width: 0; }
+.settings-view .field :user-invalid { border-color: var(--settings-invalid); }
+.settings-view .field :disabled {
+  background: var(--settings-inactive-fill);
+  color: var(--settings-disabled);
+  cursor: not-allowed;
+}
+.settings-view .field input[type="number"] { width: 76px; text-align: right; font-variant-numeric: tabular-nums; }
+.settings-view .field input[type="text"] { width: 92px; }
+.settings-view .field input[type="checkbox"] { margin: 0 8px 0 0; cursor: pointer; }
+.settings-view .field input[type="color"] { width: 38px; min-height: 34px; padding: 4px; cursor: pointer; }
+.settings-view button:active:not(:disabled) { transform: translateY(1px); }
+.accent-controls, .accent-palette, .swatches { display: flex; align-items: center; gap: 8px; }
+.accent-palette { justify-content: space-between; flex-wrap: wrap; padding-block: 8px 4px; }
+.accent-palette button { min-height: 32px; font-size: 12px; }
+.accent-palette .swatch {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+}
+.accent-palette .swatch::before {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--swatch);
+  content: '';
+}
+.accent-palette .swatch[aria-pressed="true"] { border-color: var(--accent); }
+.accent-palette .swatch:hover { background: var(--settings-hover); }
+.swatches { gap: 4px; }
+
+.preview-stage {
+  overflow: clip;
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 13px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 23px, var(--stage-grid) 23px 24px),
+    repeating-linear-gradient(90deg, transparent 0 23px, var(--stage-grid) 23px 24px),
+    linear-gradient(139deg, var(--stage-base) 33%, var(--stage-stripe) 33% 34%,
+      var(--stage-base) 34% 52%, var(--stage-rail) 52% 53.5%, var(--stage-base) 53.5%);
+}
+.preview { width: min(352px, 100%); min-width: 0; }
+.preview .island { position: relative; inset: auto; transform: none; width: 100%; transition: none; }
+.preview .island-action { cursor: default; opacity: 1; }
+.preview .island-body { min-width: 0; }
+.preview .quota small { font-size: 11px; }
+.preview-caption {
+  margin: 0;
+  padding-inline: 8px;
+  border-radius: 4px;
+  background: var(--stage-caption-fill);
+  color: var(--stage-caption);
+  font-size: 12px;
+  font-weight: 600;
+}
+.form-footer {
+  padding: 12px clamp(16px, 5vw, 32px);
+  background: var(--settings-head);
+  border-top: 1px solid var(--line);
+  min-height: 61px;
+}
+.form-footer output { color: var(--muted); font-size: 13px; }
+.form-footer .primary { flex: 0 0 auto; min-height: 36px; padding-inline: 16px; }
+.settings-view .danger { margin-top: 12px; color: var(--danger); min-height: 36px; }
+@media (max-width: 410px) {
+  .settings-tabs [role="tab"] { padding-inline: 8px; }
+  .settings-view .field select { max-inline-size: 155px; }
+}

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:">
+  <title>Codex Limits Widget</title>
+  <meta name="description" content="Лимиты Codex, настройки виджета и история расхода.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="settings.css">
+  <script defer src="glass-preview.js"></script>
+  <script defer src="renderer.js"></script>
+</head>
+<body>
+  <main id="app"></main>
+
+  <template id="island-template">
+    <div class="island">
+      <span class="glass-surface" aria-hidden="true"></span>
+      <img class="glass-rim" alt="" hidden>
+      <button class="island-action" type="button" title="Обновить лимиты">
+        <span class="island-top">
+          <span class="logo" aria-hidden="true"></span>
+          <span class="compact"></span>
+          <span class="island-title">Лимиты Codex</span>
+          <span class="refresh-symbol" aria-hidden="true">↻</span>
+        </span>
+        <span class="island-body">
+          <span class="quota" data-quota="FiveHour">
+            <span class="quota-line"><span>5 часов</span><strong></strong></span>
+            <span class="meter"><span></span></span>
+            <small></small>
+          </span>
+          <span class="quota" data-quota="Weekly">
+            <span class="quota-line"><span>Неделя</span><strong></strong></span>
+            <span class="meter"><span></span></span>
+            <small></small>
+          </span>
+        </span>
+      </button>
+    </div>
+  </template>
+
+  <template id="settings-template">
+    <header class="settings-header">
+      <h1>Настройки</h1>
+      <div class="settings-tabs" role="tablist" aria-label="Разделы настроек"></div>
+    </header>
+    <form id="preferences">
+      <div class="settings-sections" tabindex="0" aria-label="Параметры раздела"></div>
+      <footer class="form-footer">
+        <output id="save-status" aria-live="polite"></output>
+        <button class="primary" type="submit">Сохранить</button>
+      </footer>
+    </form>
+  </template>
+
+  <template id="details-template">
+    <header class="page-header">
+      <h1>Лимиты Codex</h1>
+      <button id="refresh" type="button">Обновить</button>
+      <button id="login" class="primary" type="button" hidden>Войти в ChatGPT</button>
+    </header>
+    <p id="reading" class="muted"></p>
+    <p id="request-status" class="notice" role="status" hidden></p>
+    <div class="details-grid">
+      <article class="card quota" data-quota="FiveHour">
+        <div class="quota-line"><span>5 часов</span><strong></strong></div>
+        <span class="meter"><span></span></span>
+        <small></small>
+        <div class="forecast" data-forecast="five" hidden></div>
+      </article>
+      <article class="card quota" data-quota="Weekly">
+        <div class="quota-line"><span>Неделя</span><strong></strong></div>
+        <span class="meter"><span></span></span>
+        <small></small>
+        <div class="forecast" data-forecast="week" hidden></div>
+      </article>
+      <article class="card" id="credits" hidden></article>
+    </div>
+    <p><button id="open-history" type="button">История расхода</button></p>
+  </template>
+
+  <template id="history-template">
+    <header class="page-header">
+      <h1>История расхода</h1>
+      <label class="range">Период <select id="range"></select></label>
+    </header>
+    <p class="muted" id="sample-status" role="status"></p>
+    <section class="card history-card">
+      <div class="quota-line"><h2>5 часов</h2><strong id="five-total"></strong></div>
+      <canvas id="five-chart" role="img" aria-label="Остаток 5-часового лимита по времени"></canvas>
+      <div class="forecast" data-forecast="five" hidden></div>
+    </section>
+    <section class="card history-card">
+      <div class="quota-line"><h2>Неделя</h2><strong id="week-total"></strong></div>
+      <canvas id="week-chart" role="img" aria-label="Остаток недельного лимита по времени"></canvas>
+      <div class="forecast" data-forecast="week" hidden></div>
+    </section>
+  </template>
+</body>
+</html>

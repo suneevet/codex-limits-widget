@@ -18,11 +18,12 @@ namespace CodexUsageTaskbar
     {
         [DllImport("kernel32.dll",CharSet=CharSet.Unicode)]
         static extern uint GetFinalPathNameByHandle(IntPtr handle,StringBuilder name,uint size,uint flags);
-        public static void Migrate()
+        public static void Migrate(params string[] previousDirectories)
         {
             if(IsCompleted(LocalData.DirectoryPath))return;
             string local=Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var sources=new List<string>{Path.Combine(local,"GPTUsageTaskbar")};
+            var sources=new List<string>(previousDirectories);
+            sources.Add(Path.Combine(local,"GPTUsageTaskbar"));
             string packages=Path.Combine(local,"Packages");
             try {
                 if(Directory.Exists(packages))foreach(string package in Directory.GetDirectories(packages)) {
@@ -49,12 +50,18 @@ namespace CodexUsageTaskbar
                 state=state??new StorageMigrationState();
                 if(state.Completed)return true;
                 if(state.Sources==null)state.Sources=new Dictionary<string,string>();
+                var uniqueSources = sources.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                foreach (string folder in uniqueSources) {
+                    string marker = Path.Combine(folder, "storage-migration.json");
+                    var previous = LocalData.Read<StorageMigrationState>(marker) ?? LocalData.Read<StorageMigrationState>(marker+".bak");
+                    if (previous != null) state.HistoryClearedAt = Math.Max(state.HistoryClearedAt, previous.HistoryClearedAt);
+                }
                 var history=LocalData.Read<List<HistorySample>>(historyPath);
                 if(history==null&&File.Exists(historyPath))history=LocalData.Read<List<HistorySample>>(historyPath+".bak");
                 if(history==null&&File.Exists(historyPath))return false;
                 history=(history??new List<HistorySample>()).Where(x=>x!=null&&Valid(x.Five)&&Valid(x.Week)).ToList();
                 bool changed=false;var completed=new Dictionary<string,string>();
-                foreach(string folder in sources.Distinct(StringComparer.OrdinalIgnoreCase)) {
+                foreach(string folder in uniqueSources) {
                     string sourcePath=Path.Combine(folder,"history.json");
                     var incoming=LocalData.Read<List<HistorySample>>(sourcePath);
                     if(incoming==null&&File.Exists(sourcePath))incoming=LocalData.Read<List<HistorySample>>(sourcePath+".bak");
@@ -72,7 +79,7 @@ namespace CodexUsageTaskbar
                     foreach(var source in completed)state.Sources[source.Key]=source.Value;
                     if(!LocalData.Write(statePath,state,true))return false;
                 }
-                foreach(string folder in sources) {
+                foreach(string folder in uniqueSources) {
                     string settingsPath=Path.Combine(destination,"settings.json");
                     if(!File.Exists(settingsPath)) {
                         var settings=LocalData.Read<Settings>(Path.Combine(folder,"settings.json"));

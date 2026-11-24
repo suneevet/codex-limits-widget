@@ -8,7 +8,8 @@ namespace CodexUsageTaskbar
 {
     public static class LocalData
     {
-        public static string DirectoryPath { get { return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data"); } }
+        public static string DirectoryPath { get; internal set; }
+        static LocalData() { DirectoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data"); }
         public static T Read<T>(string path) where T : class
         {
             try { return new JavaScriptSerializer { MaxJsonLength = 64000000 }.Deserialize<T>(File.ReadAllText(path)); }
@@ -51,7 +52,7 @@ namespace CodexUsageTaskbar
             CheckLow(data.FiveHour, Ui.Text("5시간"), "five", now, settings.LowQuotaAlert && settings.FiveHourLowAlert, settings.FiveHourLowPercent, alerts);
             CheckLow(data.Weekly, Ui.Text("주간"), "week", now, settings.LowQuotaAlert && settings.WeeklyLowAlert, settings.WeeklyLowPercent, alerts);
             if (settings.FiveHourResetAlert && ValidFuture(data.FiveHour, current) && data.FiveHour.ResetsAt.Value - current <= settings.FiveHourResetMinutes*60L)
-                Add("hour:" + data.FiveHour.ResetsAt.Value + (settings.FiveHourResetMinutes==60?"":":"+settings.FiveHourResetMinutes), now, Ui.Text("5시간 한도 재설정 안내"), Ui.Text("재설정까지 ") + Widget.RemainingAmount(Widget.FormatRemainingTime(data.FiveHour, now)) + Ui.Text(" 남았습니다."), alerts);
+                Add("hour:" + data.FiveHour.ResetsAt.Value + (settings.FiveHourResetMinutes==60?"":":"+settings.FiveHourResetMinutes), now, Ui.Text("5시간 한도 재설정 안내"), Ui.Text("재설정까지 ") + QuotaText.RemainingAmount(QuotaText.FormatRemainingTime(data.FiveHour, now)) + Ui.Text(" 남았습니다."), alerts);
             if (settings.WeeklyResetAlert && ValidFuture(data.Weekly, current)) {
                 DateTimeOffset reset = ExpiryDisplay.InKorea(DateTimeOffset.FromUnixTimeSeconds(data.Weekly.ResetsAt.Value));
                 var scheduled = new DateTimeOffset(reset.Date.AddDays(-settings.WeeklyReminderDays).AddHours(settings.WeeklyReminderHour).AddMinutes(settings.WeeklyReminderMinute), TimeSpan.FromHours(9));
@@ -59,7 +60,7 @@ namespace CodexUsageTaskbar
                 bool due=settings.WeeklyResetMode==1 ? data.Weekly.ResetsAt.Value-current<=settings.WeeklyResetMinutes*60L : koreaNow.Date==scheduled.Date&&now>=scheduled;
                 string criterion=settings.WeeklyResetMode==1 ? ":minutes:"+settings.WeeklyResetMinutes : settings.WeeklyReminderDays==1&&settings.WeeklyReminderHour==12&&settings.WeeklyReminderMinute==30 ? "" : ":calendar:"+settings.WeeklyReminderDays+":"+settings.WeeklyReminderHour+":"+settings.WeeklyReminderMinute;
                 if (due)
-                    Add("day:" + data.Weekly.ResetsAt.Value+criterion, now, Ui.Text("주간 한도 재설정 안내"), Ui.Text("재설정: ") + Widget.FormatResetTime(data.Weekly, true) + Ui.Text(" (한국 시간)"), alerts);
+                    Add("day:" + data.Weekly.ResetsAt.Value+criterion, now, Ui.Text("주간 한도 재설정 안내"), Ui.Text("재설정: ") + QuotaText.FormatResetTime(data.Weekly, true) + Ui.Text(" (한국 시간)"), alerts);
             }
             if (alerts.Count > 0) LocalData.Write(path, sent);
             return alerts;
