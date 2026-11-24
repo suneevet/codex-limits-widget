@@ -23,7 +23,6 @@
           <span class="logo" aria-hidden="true"></span>
           <span class="compact"></span>
           <span class="island-title">Лимиты Codex</span>
-          <span class="refresh-symbol" aria-hidden="true">↻</span>
         </span>
         <span class="island-body">
           <span class="quota" data-quota="FiveHour">
@@ -38,21 +37,28 @@
           </span>
         </span>
       </button>
+      <button class="island-refresh" type="button" title="Обновить лимиты" aria-label="Обновить лимиты"><span class="refresh-symbol" aria-hidden="true">↻</span></button>
+      <button class="island-gear" type="button" title="Настройки" aria-label="Настройки">⚙︎</button>
     </div>
   </template>
 
   <template id="settings-template">
-    <header class="settings-header">
-      <h1>Настройки</h1>
-      <div class="settings-tabs" role="tablist" aria-label="Разделы настроек"></div>
-    </header>
-    <form id="preferences">
-      <div class="settings-sections" tabindex="0" aria-label="Параметры раздела"></div>
-      <footer class="form-footer">
-        <output id="save-status" aria-live="polite"></output>
-        <button class="primary" type="submit">Сохранить</button>
-      </footer>
-    </form>
+    <section id="island-settings" aria-labelledby="settings-title" hidden>
+      <header class="settings-header">
+        <div class="settings-heading">
+          <h1 id="settings-title">Настройки</h1>
+          <button id="close-settings" type="button">К лимитам</button>
+        </div>
+        <div class="settings-tabs" role="tablist" aria-label="Разделы настроек"></div>
+      </header>
+      <form id="preferences">
+        <div class="settings-sections" tabindex="0" aria-label="Параметры раздела"></div>
+        <footer class="form-footer">
+          <output id="save-status" aria-live="polite"></output>
+          <button class="primary" type="submit">Сохранить</button>
+        </footer>
+      </form>
+    </section>
   </template>
 
   <template id="details-template">

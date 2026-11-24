@@ -1,5 +1,5 @@
 ﻿#define AppName "Codex Limits Widget"
-#define AppVersion "2.0.1"
+#define AppVersion "2.0.2"
 #define CodexUrl "https://github.com/openai/codex/releases/download/rust-v0.172.0/codex-package-x86_64-pc-windows-msvc.tar.gz"
 #define CodexSHA256 "b723674d7caf26a3f55121a02d6cad8f3ac8ddf5860747a6edde1c904cf593af"
 
@@ -7,7 +7,7 @@
 AppId={{CA276763-EE51-45D5-B486-E34BAD5703EF}
 AppName={#AppName}
 AppVersion={#AppVersion}
-VersionInfoVersion=2.0.1.0
+VersionInfoVersion=2.0.2.0
 VersionInfoProductName={#AppName}
 DefaultDirName={localappdata}\Programs\Codex Limits Widget
 DefaultGroupName={#AppName}

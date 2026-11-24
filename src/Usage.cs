@@ -178,7 +178,7 @@ namespace CodexUsageTaskbar
                     try
                     {
                         await Send(current, new { id = 1, method = "initialize", @params = new { clientInfo = new {
-                            name = "gpt_usage_widget", title = "Codex Limits Widget", version = "2.0.1" } } },timeout.Token).ConfigureAwait(false);
+                            name = "gpt_usage_widget", title = "Codex Limits Widget", version = "2.0.2" } } },timeout.Token).ConfigureAwait(false);
                         stage = "initialize/read";Stage=stage;
                         await Receive(current, 1,timeout.Token).ConfigureAwait(false);
                         stage = "initialized/send";Stage=stage;

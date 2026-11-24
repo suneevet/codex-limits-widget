@@ -12,6 +12,8 @@
   --settings-disabled: #96a2b8;
   --settings-invalid: #ffaba7;
   --settings-inactive-fill: #171c25;
+  --settings-thumb: #fbfdff;
+  --settings-picker-shadow: #070a1180;
   --stage-base: #293347;
   --stage-stripe: #68788e;
   --stage-rail: #85b1a6;
@@ -20,6 +22,8 @@
   --stage-caption-fill: #202938;
 }
 :root[data-theme="light"] {
+  --settings-thumb: #fff;
+  --settings-picker-shadow: #23324a34;
   --settings-head: #fcfdff;
   --settings-control: #f7f9fc;
   --settings-outline: #75839a;
@@ -38,21 +42,44 @@ html:has(.settings-view), .settings-view { overflow-x: clip; }
   font-size: 15px;
   line-height: 1.4;
   height: 100dvh;
+  user-select: auto;
 }
-body.settings-view main {
+#island-settings {
   min-width: 0;
-  width: 100%;
-  max-width: 780px;
-  height: 100%;
-  margin-inline: auto;
-  padding: 0;
+  position: absolute;
+  inset: 2px;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 24px;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
+  animation: reveal-settings 290ms cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes reveal-settings {
+  from {
+    opacity: .86;
+    clip-path: inset(0 max(0px, calc((100% - var(--opening-width, 352px)) / 2))
+      max(0px, calc(100% - var(--opening-height, 176px)))
+      max(0px, calc((100% - var(--opening-width, 352px)) / 2)) round 24px);
+  }
+  to { opacity: 1; clip-path: inset(0 round 24px); }
 }
 .settings-header {
   padding: 20px clamp(16px, 5vw, 32px) 0;
   background: var(--settings-head);
   border-bottom: 1px solid var(--line);
+}
+.settings-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+#close-settings {
+  flex-shrink: 0;
+  min-height: 34px;
+  font-size: 13px;
 }
 .settings-header h1 {
   font-size: 30px;
@@ -97,7 +124,7 @@ body.settings-view main {
 }
 .settings-view legend { margin: 0 0 8px; padding: 0; color: var(--ink); font-size: 18px; font-weight: 650; }
 .settings-view .field {
-  min-height: 48px;
+  min-height: 50px;
   display: grid;
   align-items: center;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -106,19 +133,123 @@ body.settings-view main {
 }
 .settings-view .field:has(:disabled) { color: var(--settings-disabled); }
 .settings-view button:not(.swatch, .primary, [role="tab"]),
-.settings-view input:not([type="checkbox"]),
-.settings-view select { background: var(--settings-control); border-color: var(--settings-outline); }
-.settings-view .field input:not([type="checkbox"]), .settings-view .field select { min-height: 34px; min-width: 0; }
-.settings-view .field :user-invalid { border-color: var(--settings-invalid); }
-.settings-view .field :disabled {
+.settings-view .field :is(input, select) {
+  background: var(--settings-control);
+  border: 1px solid var(--settings-outline);
+  border-radius: 10px;
+}
+.settings-view .field :is(input:not([type="checkbox"]), select) {
+  min-height: 36px;
+  min-width: 0;
+  padding: 6px 10px;
+  color: var(--ink);
+  font-size: 13px;
+}
+.settings-view .field :is(input, select):hover:not(:disabled) {
+  background: var(--settings-hover);
+  border-color: var(--accent);
+}
+.settings-view .field :is(input, select):focus-visible {
+  border-color: var(--accent);
+  outline-offset: 3px;
+}
+.settings-view .field :is(input, select):user-invalid { border-color: var(--settings-invalid); }
+.settings-view .field :is(input, select):disabled {
   background: var(--settings-inactive-fill);
   color: var(--settings-disabled);
   cursor: not-allowed;
 }
-.settings-view .field input[type="number"] { width: 76px; text-align: right; font-variant-numeric: tabular-nums; }
-.settings-view .field input[type="text"] { width: 92px; }
-.settings-view .field input[type="checkbox"] { margin: 0 8px 0 0; cursor: pointer; }
-.settings-view .field input[type="color"] { width: 38px; min-height: 34px; padding: 4px; cursor: pointer; }
+.settings-view .field input[type="number"] {
+  appearance: textfield;
+  width: 76px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.settings-view input::-webkit-inner-spin-button { appearance: none; }
+.settings-view .field input[type="text"] { width: 104px; }
+.settings-view .field input[type="time"] { font-variant-numeric: tabular-nums; }
+.settings-view .field input[type="color"] { width: 42px; padding: 5px; cursor: pointer; }
+.settings-view input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.settings-view input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 5px; }
+
+.settings-view .field input[type="checkbox"] {
+  appearance: none;
+  position: relative;
+  width: 42px;
+  height: 24px;
+  margin: 0 2px 0 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.settings-view input[type="checkbox"]::before {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  top: 4px;
+  left: 4px;
+  border-radius: 50%;
+  background: var(--settings-disabled);
+  transition: transform 155ms cubic-bezier(.2,.8,.2,1);
+}
+.settings-view .field input[type="checkbox"]:checked:not(:disabled) {
+  background: var(--settings-selected);
+  border-color: var(--accent);
+}
+.settings-view input[type="checkbox"]:checked::before {
+  transform: translateX(18px);
+  background: var(--settings-thumb);
+}
+
+.settings-view select { cursor: pointer; }
+@supports (appearance: base-select) {
+  .settings-view select,
+  .settings-view select::picker(select) { appearance: base-select; }
+  .settings-view select {
+    align-items: center;
+    column-gap: 12px;
+  }
+  .settings-view select::picker-icon {
+    content: "";
+    width: 7px;
+    height: 7px;
+    margin: 0 2px 3px auto;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+  }
+  .settings-view select:open::picker-icon { transform: rotate(225deg); margin-bottom: 0; }
+  .settings-view select::picker(select) {
+    background: var(--settings-head);
+    color: var(--ink);
+    border: 1px solid var(--settings-outline);
+    border-radius: 12px;
+    min-inline-size: anchor-size(width);
+    margin-block: 5px;
+    padding: 4px;
+    box-shadow: 0 10px 24px var(--settings-picker-shadow);
+  }
+  .settings-view option {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    min-height: 34px;
+    padding: 6px 9px;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .settings-view option:hover, .settings-view option:focus-visible { background: var(--settings-hover); }
+  .settings-view option:checked {
+    background: var(--settings-selected);
+    color: var(--settings-selected-ink);
+    font-weight: 650;
+  }
+  .settings-view option::checkmark { order: 1; margin-inline-start: auto; }
+}
+@media (forced-colors: active) {
+  .settings-view input[type="checkbox"]::before { background: ButtonText; }
+  .settings-view input[type="checkbox"]:checked::before { background: Highlight; }
+}
 .settings-view button:active:not(:disabled) { transform: translateY(1px); }
 .accent-controls, .accent-palette, .swatches { display: flex; align-items: center; gap: 8px; }
 .accent-palette { justify-content: space-between; flex-wrap: wrap; padding-block: 8px 4px; }
@@ -162,6 +293,7 @@ body.settings-view main {
 }
 .preview { width: min(352px, 100%); min-width: 0; }
 .preview .island { position: relative; inset: auto; transform: none; width: 100%; transition: none; }
+.preview .island.expanded { height: 152px; }
 .preview .island-action { cursor: default; opacity: 1; }
 .preview .island-body { min-width: 0; }
 .preview .quota small { font-size: 11px; }

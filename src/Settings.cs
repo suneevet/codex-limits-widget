@@ -9,6 +9,7 @@ namespace CodexUsageTaskbar
     public sealed class Settings
     {
         public long? DisplayId { get; set; }
+        public bool ExpandOnClick { get; set; }
         public int HorizontalOffset { get; set; }
         public bool AboveTaskbar { get; set; }
         public bool DarkTheme { get; set; }

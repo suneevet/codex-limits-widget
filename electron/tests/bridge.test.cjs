@@ -44,8 +44,9 @@ test('Demo reads both quotas and persists a settings patch without overwriting o
   assert.equal(snapshot.Weekly.Remaining, 80);
   assert.equal(snapshot.ResetCredits, 2);
   assert.equal(settings.DisplayId, null);
+  assert.equal(settings.ExpandOnClick, false);
 
-  const saved = await bridge.request('save', { patch: { AccentRgb: 0x84e4c4, BarThickness: 99, GameExclusions: ['game.exe'], DisplayId: 4294967421 } });
+  const saved = await bridge.request('save', { patch: { AccentRgb: 0x84e4c4, BarThickness: 99, GameExclusions: ['game.exe'], DisplayId: 4294967421, ExpandOnClick: true } });
   assert.equal(saved.AccentRgb, 0x84e4c4);
   assert.equal(saved.BarThickness, 7);
   assert.equal(saved.HistoryDays, settings.HistoryDays);
@@ -53,7 +54,9 @@ test('Demo reads both quotas and persists a settings patch without overwriting o
   assert.deepEqual(read(folder, 'settings.json'), saved);
   assert.equal(saved.DisplayId, 4294967421);
   const reopened = launch(children, binary, folder, 'demo', []);
-  assert.equal((await reopened.request('settings')).settings.DisplayId, 4294967421);
+  const restored = (await reopened.request('settings')).settings;
+  assert.equal(restored.DisplayId, 4294967421);
+  assert.equal(restored.ExpandOnClick, true);
   assert.equal((await reopened.request('save', { patch: { DisplayId: null } })).DisplayId, null);
 });
 

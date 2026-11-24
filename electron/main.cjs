@@ -13,11 +13,13 @@ const preload = path.join(__dirname, 'preload.cjs');
 const demo = process.argv.includes('--demo');
 const local = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
 const data = path.join(local, 'CodexLimitsWidget', 'data');
-const size = { width: 356, height: 156 };
+const size = { width: 356, height: 180 };
+const settingsSize = { width: 560, height: 650 };
 const compactIsland = { width: 288, height: 34, radius: 17 };
-const expandedIsland = { width: 352, height: 152, radius: 26 };
+const expandedIsland = { width: 352, height: 176, radius: 26 };
 
-let bridge, tray, island, preferences, details, history;
+let bridge, tray, island, details, history;
+let settingsOpen = false;
 let settings = {};
 let state = { demo, busy: !demo };
 let startup = false;
@@ -25,6 +27,7 @@ let placement = {};
 let suspended = false;
 let locked = false;
 let hovering = false;
+let clickExpanded = false;
 let ignoreMouse = true;
 let lastInside = -Infinity;
 let dataTimer, placementTimer, pointerTimer, glassTimer;
@@ -60,11 +63,11 @@ function send(window, channel, value) {
 }
 
 function current() {
-  return { state, settings, startup, hovering, loginInProgress, reduceTransparency: reducedGlass(), canSetStartup: app.isPackaged && !demo };
+  return { state, settings, startup, hovering, settingsOpen, loginInProgress, reduceTransparency: reducedGlass(), canSetStartup: app.isPackaged && !demo };
 }
 
 function broadcast() {
-  for (const window of [island, preferences, details, history]) send(window, 'widget:update', current());
+  for (const window of [island, details, history]) send(window, 'widget:update', current());
 }
 
 function report(error) {
@@ -87,7 +90,7 @@ function invalidateGlass() {
 }
 
 async function sampleGlass() {
-  if (readingGlass || quitting || !island?.isVisible() || !settings.GlassIsland ||
+  if (readingGlass || quitting || settingsOpen || !island?.isVisible() || !settings.GlassIsland ||
       reducedGlass() || performance.now() < glassReadyAt) return;
 
   const generation = glassReadyAt;
@@ -122,11 +125,13 @@ function selectedDisplay() {
 function centerIsland() {
   if (!island) return;
   const area = selectedDisplay().workArea;
-  const x = Math.round(area.x + (area.width - size.width) / 2);
+  const width = settingsOpen ? Math.max(1, Math.min(settingsSize.width, area.width - 20)) : size.width;
+  const height = settingsOpen ? Math.max(1, Math.min(settingsSize.height, area.height - 20)) : size.height;
+  const x = Math.round(area.x + (area.width - width) / 2);
   const y = area.y + 10;
-  const key = x + ':' + y;
+  const key = [x, y, width, height].join(':');
   if (positionKey !== key) {
-    island.setPosition(x, y);
+    island.setBounds({ x, y, width, height });
     invalidateGlass();
   }
   positionKey = key;
@@ -141,20 +146,28 @@ function roundedHit(point, width, height, radius) {
   return cornerX ** 2 + cornerY ** 2 <= radius ** 2;
 }
 
+function setExpanded(expanded) {
+  if (expanded === hovering) return;
+  hovering = expanded;
+  invalidateGlass();
+  send(island, 'widget:update', current());
+}
+
+function activateIsland() {
+  if (!settings.ExpandOnClick) return tick(true);
+  clickExpanded = !clickExpanded;
+  setExpanded(clickExpanded);
+}
+
 function trackPointer() {
-  if (!island?.isVisible()) return;
+  if (settingsOpen || !island?.isVisible()) return;
   const [x, y] = island.getPosition();
   const cursor = screen.getCursorScreenPoint();
   const point = { x: cursor.x - x, y: cursor.y - y };
   const { width, height, radius } = hovering ? expandedIsland : compactIsland;
   const inside = roundedHit(point, width, height, radius);
   if (inside) lastInside = performance.now();
-  const expanded = menuOpen || inside || performance.now() - lastInside < 155;
-  if (expanded !== hovering) {
-    hovering = expanded;
-    invalidateGlass();
-    send(island, 'widget:update', current());
-  }
+  setExpanded(settings.ExpandOnClick ? clickExpanded : menuOpen || inside || performance.now() - lastInside < 155);
   const ignore = !inside;
   if (ignore !== ignoreMouse) {
     ignoreMouse = ignore;
@@ -164,11 +177,12 @@ function trackPointer() {
 
 function syncVisibility() {
   if (!island || quitting) return;
-  if (placement.hidden || suspended || locked) {
+  if ((!settingsOpen && placement.hidden) || suspended || locked) {
     if (island.isVisible()) invalidateGlass();
     island.hide();
     details?.hide();
     hovering = false;
+    if (!settingsOpen) clickExpanded = false;
     lastInside = -Infinity;
     send(island, 'widget:update', current());
   } else if (!island.isVisible()) {
@@ -269,9 +283,15 @@ function updateTrayTooltip() {
 async function save(patch) {
   const wasGlass = settings.GlassIsland;
   const wasDisplay = settings.DisplayId;
+  const wasClick = settings.ExpandOnClick;
   settings = await bridge.request('save', { patch });
   if (wasGlass !== settings.GlassIsland) invalidateGlass();
   if (wasDisplay !== settings.DisplayId) centerIsland();
+  if (wasClick !== settings.ExpandOnClick) {
+    clickExpanded = false;
+    lastInside = -Infinity;
+    setExpanded(false);
+  }
   broadcast();
   updateTrayMenu();
   return settings;
@@ -304,7 +324,7 @@ function displayMenu() {
   ];
 }
 
-function menuTemplate() {
+function menuTemplate(forTray = false) {
   const exclusions = settings.GameExclusions || [];
   const add = placement.app && !exclusions.some(name => name.toLowerCase() === placement.app.toLowerCase());
   return [
@@ -312,9 +332,15 @@ function menuTemplate() {
     { label: 'Войти в ChatGPT', visible: Boolean(state.loginRequired), enabled: !loginInProgress, click: loginWithChatGpt },
     { label: 'Показать виджет', click: checkPlacement },
     { label: 'Монитор', submenu: displayMenu() },
+    ...(forTray ? [{ label: 'Раскрытие островка', submenu: [
+      { label: 'По наведению', type: 'radio', checked: !settings.ExpandOnClick,
+        click: () => save({ ExpandOnClick: false }).catch(report) },
+      { label: 'По клику', type: 'radio', checked: Boolean(settings.ExpandOnClick),
+        click: () => save({ ExpandOnClick: true }).catch(report) }
+    ] }] : []),
     { label: 'Подробнее', click: () => openPanel('details') },
     { label: 'История расхода', click: () => openPanel('history') },
-    { label: 'Настройки', click: () => openPanel('settings') },
+    { label: 'Настройки', click: () => setIslandSettings(true) },
     { type: 'separator' },
     { label: 'Тема', submenu: [
       { label: 'Светлая', type: 'radio', checked: !settings.DarkTheme && !settings.GlassIsland, click: () => save({ DarkTheme: false, GlassIsland: false }).catch(report) },
@@ -338,7 +364,7 @@ function menuTemplate() {
 }
 
 function updateTrayMenu() {
-  tray.setContextMenu(Menu.buildFromTemplate(menuTemplate()));
+  tray.setContextMenu(Menu.buildFromTemplate(menuTemplate(true)));
 }
 
 function showMenu() {
@@ -346,19 +372,36 @@ function showMenu() {
   Menu.buildFromTemplate(menuTemplate()).popup({ window: island, callback: () => { menuOpen = false; } });
 }
 
+function setIslandSettings(open) {
+  if (!island || quitting) return;
+  if (settingsOpen !== open) {
+    settingsOpen = open;
+    hovering = !open && settings.ExpandOnClick && clickExpanded;
+    lastInside = -Infinity;
+    invalidateGlass();
+    if (!open && island.isFocused()) island.blur();
+    island.setFocusable(open);
+    ignoreMouse = !open;
+    island.setIgnoreMouseEvents(ignoreMouse);
+    centerIsland();
+    send(island, 'widget:update', current());
+  }
+
+  syncVisibility();
+  if (open && island.isVisible()) island.focus();
+}
+
 const panels = {
-  settings: { label: 'Настройки', width: 580, height: 760 },
   details: { label: 'Лимиты Codex', width: 462, height: 570 },
   history: { label: 'История расхода', width: 790, height: 730 }
 };
 
 function panel(view) {
-  return view === 'settings' ? preferences : view === 'details' ? details : history;
+  return view === 'details' ? details : history;
 }
 
 function setPanel(view, window) {
-  if (view === 'settings') preferences = window;
-  else if (view === 'details') details = window;
+  if (view === 'details') details = window;
   else history = window;
 }
 
@@ -401,22 +444,26 @@ function registerIpc() {
     });
   }
 
-  handle('initial', () => [island, preferences, details, history], current);
+  handle('initial', () => [island, details, history], current);
+  const settingsWindow = () => settingsOpen ? island : null;
   handle('refresh', () => [island, details], () => tick(true));
+  handle('activate-island', () => [settingsOpen ? null : island], activateIsland);
   handle('login', () => [details], loginWithChatGpt);
   handle('menu', () => [island], showMenu);
   handle('open', () => [island, details], view => {
-    if (Object.hasOwn(panels, view)) openPanel(view);
+    if (view === 'settings') setIslandSettings(true);
+    else if (Object.hasOwn(panels, view)) openPanel(view);
   });
   handle('details', () => [details], () => bridge.request('details'));
   handle('history', () => [history], days => {
     if (![1, 7, 30, 90, 180, 365].includes(days)) days = 1;
     return bridge.request('history', { days });
   });
-  handle('save', () => [preferences, history], (patch) => save(patch));
-  handle('startup', () => [preferences], enabled => setStartup(enabled === true));
-  handle('clear', () => [preferences], async () => {
-    const { response } = await dialog.showMessageBox(preferences, {
+  handle('close-settings', () => [island], () => setIslandSettings(false));
+  handle('save', () => [settingsWindow(), history], patch => save(patch));
+  handle('startup', () => [settingsWindow()], enabled => setStartup(enabled === true));
+  handle('clear', () => [settingsWindow()], async () => {
+    const { response } = await dialog.showMessageBox(island, {
       type: 'warning', message: 'Удалить историю расхода на этом ПК?',
       buttons: ['Отмена', 'Удалить'], defaultId: 0, cancelId: 0
     });

@@ -16,6 +16,7 @@ const rangeValues = [1, 7, 30, 90, 180, 365];
 const swatches = ['#8caaff', '#86e3ca', '#90d5f5', '#c0aaff', '#ffc583', '#ffabc1'];
 let model;
 let settingsForm;
+let settingsPanel;
 let savedSettings;
 let lastRead;
 let historyResult;
@@ -88,6 +89,12 @@ function renderIsland(element, state, settings, expanded) {
   element.classList.toggle('expanded', expanded);
   element.classList.toggle('busy', state.busy);
   element.classList.toggle('stale', state.stale);
+  const action = $('.island-action', element);
+  if (action instanceof HTMLButtonElement) {
+    action.title = settings.ExpandOnClick ? (expanded ? 'Свернуть островок' : 'Раскрыть островок') : 'Обновить лимиты';
+    if (settings.ExpandOnClick) action.setAttribute('aria-expanded', expanded);
+    else action.removeAttribute('aria-expanded');
+  }
   const five = state.snapshot?.FiveHour;
   const week = state.snapshot?.Weekly;
   const showWeek = week?.Remaining === 0 || (!five && Boolean(week));
@@ -107,20 +114,61 @@ function applyUpdate(next) {
   model = next;
   const { state, settings } = next;
   if (view === 'island') {
-    $('.island').classList.toggle('reduce-glass', next.reduceTransparency);
-    renderIsland($('.island'), state, settings, next.hovering);
+    updateIslandView(next);
     return;
   }
-  if (view !== 'settings') styleTheme(document.documentElement, settings);
-  else {
-    document.documentElement.classList.toggle('reduce-glass', next.reduceTransparency);
-    updateGlassPreview($('.preview .island'));
-  }
+  styleTheme(document.documentElement, settings);
   if (view === 'details') renderDetails();
   if (view === 'history') {
     updateRanges();
     readHistoryIfChanged();
   }
+}
+
+function updateIslandView(next) {
+  const island = root.firstElementChild;
+  const opening = next.settingsOpen && (!settingsPanel || settingsPanel.hidden);
+  if (opening && !settingsPanel) {
+    root.append($('#settings-template').content.cloneNode(true));
+    settingsPanel = $('#island-settings');
+    setupSettings();
+    $('#close-settings').onclick = closeIslandSettings;
+  }
+
+  if (next.settingsOpen) {
+    if (opening) {
+      const { width, height } = island.getBoundingClientRect();
+      settingsPanel.style.setProperty('--opening-width', width + 'px');
+      settingsPanel.style.setProperty('--opening-height', height + 'px');
+    }
+    island.hidden = true;
+    document.body.classList.add('settings-view');
+    document.documentElement.classList.toggle('reduce-glass', next.reduceTransparency);
+    settingsPanel.hidden = false;
+    if (opening) {
+      populateSettings(next);
+      $('#close-settings').focus({ preventScroll: true });
+    } else {
+      updateGlassPreview($('.preview .island'));
+    }
+    return;
+  }
+
+  if (settingsPanel && !settingsPanel.hidden) {
+    settingsPanel.hidden = true;
+    document.body.classList.remove('settings-view');
+    document.documentElement.classList.remove('reduce-glass');
+    delete document.documentElement.dataset.theme;
+    document.documentElement.style.removeProperty('--accent');
+    document.documentElement.style.removeProperty('--bar-thickness');
+  }
+  island.hidden = false;
+  island.classList.toggle('reduce-glass', next.reduceTransparency);
+  renderIsland(island, next.state, next.settings, next.hovering);
+}
+
+function closeIslandSettings() {
+  if (!$('#close-settings').disabled) window.widget.closeSettings();
 }
 
 function renderForecasts(data) {
@@ -252,6 +300,7 @@ function field(name, label, type) {
   } else {
     control = node('input');
     control.type = type === 'check' ? 'checkbox' : type;
+    if (type === 'check') control.setAttribute('role', 'switch');
     control.required = type === 'time';
     row.append(control);
   }
@@ -299,6 +348,8 @@ function setupSettings() {
       sample.className = previewButton.className;
       sample.append(...previewButton.childNodes);
       previewButton.replaceWith(sample);
+      $('.island-refresh', preview).remove();
+      $('.island-gear', preview).remove();
       const caption = node('p', 'Предпросмотр');
       caption.className = 'preview-caption';
       stage.append(preview, caption);
@@ -455,18 +506,21 @@ async function saveSettings(event) {
   }
   if (patch.HistoryDays < savedSettings.HistoryDays &&
       !window.confirm('Записи старше выбранного срока будут удалены. Сохранить?')) return;
-  button.disabled = true;
+  const startupRequested = settingsForm.elements.Startup.checked;
+  button.disabled = $('#close-settings').disabled = true;
   try {
     const settings = await window.widget.save(patch);
-    if (model.canSetStartup && settingsForm.elements.Startup.checked !== model.startup) {
-      await window.widget.startup(settingsForm.elements.Startup.checked);
+    if (model.settingsOpen && model.canSetStartup && startupRequested !== model.startup) {
+      await window.widget.startup(startupRequested);
     }
-    populateSettings({ ...model, settings });
-    output.value = 'Настройки сохранены';
+    if (model.settingsOpen) {
+      populateSettings({ ...model, settings });
+      output.value = 'Настройки сохранены';
+    }
   } catch (error) {
     output.value = error.message;
   } finally {
-    button.disabled = false;
+    button.disabled = $('#close-settings').disabled = false;
   }
 }
 
@@ -580,14 +634,19 @@ async function boot() {
       island.classList.toggle('sampled-glass', Boolean(frame));
       island.classList.toggle('bright-glass', Boolean(frame?.bright));
     });
-    $('.island-action').onclick = () => window.widget.refresh();
+    $('.island-action', island).onclick = () => window.widget.activateIsland();
+    $('.island-refresh', island).onclick = () => window.widget.refresh();
+    $('.island-gear', island).onclick = () => window.widget.open('settings');
     root.oncontextmenu = event => {
+      if (model.settingsOpen) return;
       event.preventDefault();
       window.widget.menu();
     };
-  } else if (view === 'settings') {
-    setupSettings();
-    populateSettings(initial);
+    window.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || event.defaultPrevented || !model.settingsOpen || $('select:open', settingsPanel)) return;
+      event.preventDefault();
+      closeIslandSettings();
+    });
   } else if (view === 'details') {
     $('#refresh').onclick = () => window.widget.refresh();
     $('#login').onclick = () => window.widget.login();

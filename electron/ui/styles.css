@@ -154,7 +154,7 @@ canvas { display: block; width: 100%; height: 155px; margin-top: 8px; }
 @supports not (backdrop-filter: blur(1px)) {
   .island[data-theme="glass"]:not(.sampled-glass) { background: var(--pill-bg); }
 }
-.island.expanded { width: 352px; height: 152px; border-radius: 26px; }
+.island.expanded { width: 352px; height: 176px; border-radius: 26px; }
 .island-action {
   display: block;
   width: 100%;
@@ -179,6 +179,7 @@ canvas { display: block; width: 100%; height: 155px; margin-top: 8px; }
   gap: 8px;
   white-space: nowrap;
 }
+.island-top::after { content: ""; flex: 0 0 16px; }
 .expanded .island-top { inset-inline: 15px; height: 36px; }
 .logo { width: 8px; height: 8px; border-radius: 50%; background: var(--signal-color, var(--glass-ink-accent, var(--accent))); flex: 0 0 auto; }
 .island {
@@ -197,7 +198,41 @@ canvas { display: block; width: 100%; height: 155px; margin-top: 8px; }
 .compact { overflow: hidden; text-overflow: ellipsis; }
 .island-title, .expanded .compact { display: none; }
 .expanded .island-title { display: inline; }
-.refresh-symbol { font-size: 16px; color: var(--pill-muted); }
+.island-refresh, .island-gear {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--pill-ink);
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: "Segoe UI Symbol", "Segoe UI", sans-serif;
+}
+.island-refresh { top: 3px; right: 7px; width: 26px; height: 26px; border-radius: 50%; }
+.expanded .island-refresh { right: 11px; top: 5px; }
+.island-gear {
+  display: none;
+  right: 10px;
+  bottom: 8px;
+  width: 31px;
+  height: 31px;
+  font-size: 17px;
+  border-radius: 11px;
+}
+.expanded .island-gear { display: grid; animation: reveal-island-gear 130ms ease 150ms both; }
+@keyframes reveal-island-gear {
+  from { opacity: 0; visibility: hidden; }
+  to { opacity: 1; visibility: visible; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .expanded .island-gear { animation: none; }
+}
+.island-refresh:hover, .island-gear:hover {
+  background: color-mix(in srgb, var(--pill-ink) 12%, transparent);
+  border-color: color-mix(in srgb, var(--pill-ink) 24%, transparent);
+}
+.island-refresh:active, .island-gear:active { opacity: .72; }
+.refresh-symbol { font-size: 16px; line-height: 1; color: var(--pill-muted); }
 .island.busy .refresh-symbol { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .island-body { position: absolute; inset: 39px 15px auto; min-width: 315px; opacity: 0; transition: opacity 100ms ease; display: grid; gap: 8px; }

@@ -6,9 +6,11 @@ const invoke = (name, ...args) => ipcRenderer.invoke('widget:' + name, ...args);
 contextBridge.exposeInMainWorld('widget', {
   initial: () => invoke('initial'),
   refresh: () => invoke('refresh'),
+  activateIsland: () => invoke('activate-island'),
   login: () => invoke('login'),
   menu: () => invoke('menu'),
   open: view => invoke('open', view),
+  closeSettings: () => invoke('close-settings'),
   details: () => invoke('details'),
   history: days => invoke('history', days),
   save: patch => invoke('save', patch),
