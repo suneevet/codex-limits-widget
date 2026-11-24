@@ -1,0 +1,55 @@
+name: Build Windows release
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/release.yml]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build
+        required: true
+        default: v1.1.1
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    env:
+      RELEASE_TAG: ${{ inputs.tag || 'v1.1.1' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+      - name: Build and test widget
+        shell: powershell
+        run: .\build.ps1 -English
+      - name: Build installer and publish assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $compiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path -LiteralPath $compiler)) {
+            $download = Join-Path $env:RUNNER_TEMP 'inno-6.7.4.exe'
+            $directory = Join-Path $env:RUNNER_TEMP 'inno'
+            Invoke-WebRequest https://github.com/jrsoftware/issrc/releases/download/is-6_7_4/innosetup-6.7.4.exe -OutFile $download
+            $signature = Get-AuthenticodeSignature -LiteralPath $download
+            if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'Pyrsys') {
+              throw 'Inno Setup signature validation failed.'
+            }
+            $setup = Start-Process $download -ArgumentList @("/DIR=$directory", '/CURRENTUSER', '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -Wait -PassThru
+            if ($setup.ExitCode -ne 0) { throw "Inno Setup exited with $($setup.ExitCode)." }
+            $compiler = Join-Path $directory 'ISCC.exe'
+          }
+          $out = Join-Path $env:RUNNER_TEMP 'release'
+          New-Item -ItemType Directory -Path $out -Force | Out-Null
+          & $compiler "/O$out" 'installer/CodexLimitsWidget.iss'
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
+          Copy-Item bin/GPTUsageWidget.en.exe (Join-Path $out 'CodexLimitsWidget.exe')
+          gh release upload $env:RELEASE_TAG (Join-Path $out 'CodexLimitsWidget-Setup.exe') (Join-Path $out 'CodexLimitsWidget.exe')
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed.' }
